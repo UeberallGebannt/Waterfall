@@ -1,0 +1,49 @@
+From 07279a5c3d79413567f8939c73519806eae675d2 Mon Sep 17 00:00:00 2001
+From: UeberallGebannt <paulmertens63@gmail.com>
+Date: Thu, 8 Jul 2021 13:39:28 +0200
+Subject: [PATCH] Additional 1.7.x Support
+
+
+diff --git a/protocol/src/main/java/net/md_5/bungee/protocol/Protocol.java b/protocol/src/main/java/net/md_5/bungee/protocol/Protocol.java
+index 0dc8249e..9bb6dcde 100644
+--- a/protocol/src/main/java/net/md_5/bungee/protocol/Protocol.java
++++ b/protocol/src/main/java/net/md_5/bungee/protocol/Protocol.java
+@@ -138,6 +138,7 @@ public enum Protocol
+             // Waterfall end
+             TO_CLIENT.registerPacket(
+                     PlayerListItem.class, // PlayerInfo
++                    PlayerListItem::new,
+                     map( ProtocolConstants.MINECRAFT_1_7_2, 0x38 ),
+                     map( ProtocolConstants.MINECRAFT_1_9, 0x2D ),
+                     map( ProtocolConstants.MINECRAFT_1_12_1, 0x2E ),
+diff --git a/proxy/src/main/java/net/md_5/bungee/UserConnection.java b/proxy/src/main/java/net/md_5/bungee/UserConnection.java
+index b1dfe733..198a58a0 100644
+--- a/proxy/src/main/java/net/md_5/bungee/UserConnection.java
++++ b/proxy/src/main/java/net/md_5/bungee/UserConnection.java
+@@ -482,6 +482,23 @@ public final class UserConnection implements ProxiedPlayer
+     @Override
+     public void sendMessage(ChatMessageType position, BaseComponent... message)
+     {
++        // KettleMC start - Split multi-line messages for 1.7 support
++        if ( getPendingConnection().getVersion() <= ProtocolConstants.MINECRAFT_1_7_6 )
++        {
++            StringBuilder builder = new StringBuilder();
++            for ( BaseComponent baseComponent : message )
++            {
++                builder.append( baseComponent.toLegacyText() );
++            }
++            String[] messages = builder.toString().split( "\\r?\\n" );
++            for (String msg : messages)
++            {
++                sendMessage( position, null, TextComponent.fromLegacyText( msg ) );
++            }
++            return;
++        }
++        // KettleMC end
++
+         sendMessage( position, null, message );
+     }
+ 
+-- 
+2.26.2.windows.1
+
